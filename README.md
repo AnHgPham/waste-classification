@@ -96,10 +96,6 @@ python scripts/99_evaluate_model.py --model mobilenetv2
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 👤 Author
-
-**Pham An** - Waste Classification Capstone Project (2024)
-
 ---
 
 ## 🇻🇳 Tiếng Việt
