@@ -1,13 +1,3 @@
-"""
-Week 1 - Data Exploration Script
-
-This script performs data exploration and visualization on the waste classification dataset.
-
-Usage:
-    python scripts/week1_data_exploration.py
-
-"""
-
 import os
 import sys
 import numpy as np

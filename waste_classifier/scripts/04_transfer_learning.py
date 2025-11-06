@@ -1,16 +1,3 @@
-"""
-Week 2 - Transfer Learning Script
-
-This script implements transfer learning with MobileNetV2 using a two-phase approach:
-- Phase 1: Feature extraction (frozen base)
-- Phase 2: Fine-tuning (unfrozen top layers)
-
-Usage:
-    python scripts/week2_transfer_learning.py
-    python scripts/week2_transfer_learning.py --phase1-epochs 20 --phase2-epochs 15
-
-"""
-
 import os
 import sys
 import argparse

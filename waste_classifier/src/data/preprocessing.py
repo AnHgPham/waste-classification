@@ -13,7 +13,6 @@ import shutil
 import random
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
 
 from ..config import *
 
@@ -131,20 +130,27 @@ def create_data_generators(train_dir, val_dir, img_size, batch_size, seed):
     #    new_pixel = clip((pixel - mean_pixel) × factor + mean_pixel, 0, 255)
     #    Higher factor increases contrast, lower factor decreases contrast
     augmentation_layers = [
-        layers.RandomFlip("horizontal"),
-        layers.RandomRotation(AUGMENTATION_CONFIG['rotation_factor']),
-        layers.RandomZoom(AUGMENTATION_CONFIG['zoom_factor']),
-        layers.RandomContrast(AUGMENTATION_CONFIG['contrast_factor']),
+        keras.layers.RandomRotation(AUGMENTATION_CONFIG['rotation_factor']),
+        keras.layers.RandomZoom(AUGMENTATION_CONFIG['zoom_factor']),
+        keras.layers.RandomContrast(AUGMENTATION_CONFIG['contrast_factor']),
     ]
     
     # Add optional augmentations if enabled in config
+    # horizontal_flip: config flag (True/False) → controls whether to add RandomFlip("horizontal")
+    # "horizontal": TensorFlow API parameter (mode string) → specifies flip direction
+    if AUGMENTATION_CONFIG.get('horizontal_flip', False):
+        # RandomFlip("horizontal"):
+        #    new_pixel[i,j] = original_pixel[i, W-1-j] with 50% probability
+        #    Config: AUGMENTATION_CONFIG['horizontal_flip'] = True → enables this augmentation
+        augmentation_layers.insert(0, keras.layers.RandomFlip("horizontal"))
+    
     if AUGMENTATION_CONFIG.get('brightness_factor', 0) > 0:
         # RandomBrightness(brightness_factor=0.1):
         #   delta = 0.1 × 255 × random(-1, 1) ∈ [-25.5, 25.5]
         #   new_pixel = clip(pixel + delta, 0, 255)
         #   Positive delta brightens, negative delta darkens
         augmentation_layers.append(
-            layers.RandomBrightness(AUGMENTATION_CONFIG['brightness_factor'])
+            keras.layers.RandomBrightness(AUGMENTATION_CONFIG['brightness_factor'])
         )
 
     if AUGMENTATION_CONFIG.get('width_shift_factor', 0) > 0 or AUGMENTATION_CONFIG.get('height_shift_factor', 0) > 0:
@@ -155,7 +161,7 @@ def create_data_generators(train_dir, val_dir, img_size, batch_size, seed):
         #   new_pixel[i,j] = original_pixel[i+shift_y, j+shift_x]
         #   Simulates camera movement or object position variation
         augmentation_layers.append(
-            layers.RandomTranslation(
+            keras.layers.RandomTranslation(
                 height_factor=AUGMENTATION_CONFIG.get('height_shift_factor', 0),
                 width_factor=AUGMENTATION_CONFIG.get('width_shift_factor', 0)
             )

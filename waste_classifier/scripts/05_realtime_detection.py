@@ -1,17 +1,3 @@
-"""
-Week 3 - Real-time Detection Script
-
-This script implements real-time waste detection and classification using:
-- YOLOv8 for object detection
-- Trained classifier for waste type classification
-
-Usage:
-    python scripts/week3_realtime_detection.py
-    python scripts/week3_realtime_detection.py --model mobilenetv2 --camera 0
-    python scripts/week3_realtime_detection.py --video path/to/video.mp4
-
-"""
-
 import os
 import sys
 import argparse

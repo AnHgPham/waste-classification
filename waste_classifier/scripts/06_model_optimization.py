@@ -1,17 +1,3 @@
-"""
-Week 4 - Model Optimization Script
-
-This script converts and optimizes trained models for deployment:
-- Convert to TensorFlow Lite
-- Apply INT8 quantization
-- Evaluate optimized models
-
-Usage:
-    python scripts/week4_model_optimization.py
-    python scripts/week4_model_optimization.py --model baseline
-
-"""
-
 import os
 import sys
 import argparse

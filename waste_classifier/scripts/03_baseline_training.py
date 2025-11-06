@@ -1,14 +1,3 @@
-"""
-Week 1 - Baseline CNN Training Script
-
-This script builds and trains a baseline CNN model from scratch.
-
-Usage:
-    python scripts/week1_baseline_training.py
-    python scripts/week1_baseline_training.py --epochs 50
-
-"""
-
 import os
 import sys
 import argparse

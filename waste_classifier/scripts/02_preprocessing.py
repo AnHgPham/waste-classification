@@ -1,13 +1,3 @@
-"""
-Week 1 - Data Preprocessing Script
-
-This script splits the raw dataset into train/val/test sets and prepares data generators.
-
-Usage:
-    python scripts/week1_preprocessing.py
-
-"""
-
 import os
 import sys
 import numpy as np
