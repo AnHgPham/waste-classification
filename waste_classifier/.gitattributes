@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Git LFS configuration
 # Uncomment these lines if you want to use Git LFS for large model files
 # (recommended for files > 50MB or if repository size becomes too large)
@@ -18,3 +19,25 @@
 # Model weights and checkpoints
 *.weights binary
 *.ckpt binary
+=======
+# Git LFS configuration
+# Uncomment these lines if you want to use Git LFS for large model files
+# (recommended for files > 50MB or if repository size becomes too large)
+
+# *.keras filter=lfs diff=lfs merge=lfs -text
+# *.tflite filter=lfs diff=lfs merge=lfs -text
+# *.h5 filter=lfs diff=lfs merge=lfs -text
+# *.pb filter=lfs diff=lfs merge=lfs -text
+
+# For now, track as binary files (no LFS)
+*.keras binary
+*.tflite binary
+*.h5 binary
+*.pb binary
+*.pt binary
+*.pth binary
+
+# Model weights and checkpoints
+*.weights binary
+*.ckpt binary
+>>>>>>> 0f4e6bacbdcc7cbe72f1735a79da4b4b1da3fcfc

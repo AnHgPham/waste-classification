@@ -51,22 +51,27 @@ DATASET_URL = "https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2"
 
 # Data split ratios
 # Following standard practice: 80% train, 10% val, 10% test
+# Mathematical verification: TRAIN_RATIO + VAL_RATIO + TEST_RATIO = 0.8 + 0.1 + 0.1 = 1.0
+# Split calculation: if total_samples = N, then:
+#   - train_samples = floor(N × 0.8)
+#   - val_samples = floor(N × 0.1)
+#   - test_samples = N - train_samples - val_samples
 TRAIN_RATIO = 0.8
 VAL_RATIO = 0.1
 TEST_RATIO = 0.1
 
 # Class names (alphabetically sorted for consistency)
 CLASS_NAMES = [
-    'battery',      # Batteries and power cells
-    'biological',   # Organic/food waste
-    'cardboard',    # Cardboard boxes and packaging
-    'clothes',      # Textile and fabric items
-    'glass',        # Glass bottles and containers
-    'metal',        # Metal cans and objects
-    'paper',        # Paper and documents
-    'plastic',      # Plastic bottles and items
-    'shoes',        # Footwear
-    'trash'         # General waste
+    'battery',      
+    'biological',   
+    'cardboard',    
+    'clothes',      
+    'glass',        
+    'metal',        
+    'paper',        
+    'plastic',      
+    'shoes',        
+    'trash'         
 ]
 
 NUM_CLASSES = len(CLASS_NAMES)
@@ -114,15 +119,30 @@ EPOCHS_TRANSFER_PHASE2 = 15            # Fine-tuning epochs (increased)
 # Following best practices for transfer learning:
 # - Higher LR for training from scratch
 # - Lower LR for fine-tuning pretrained models
+#
+# Mathematical justification:
+# - Phase transition: LR_phase2 = LR_phase1 / 10 (10x reduction for fine-tuning)
+# - Parameter update: θ_new = θ_old - α × ∇L(θ), where α = learning_rate
+# - Lower α in fine-tuning prevents destroying pretrained features
 LEARNING_RATE_BASELINE = 1e-3          # 0.001
 LEARNING_RATE_TRANSFER_PHASE1 = 1e-4   # 0.0001 (feature extraction - lower for stability)
 LEARNING_RATE_TRANSFER_PHASE2 = 1e-5   # 0.00001 (fine-tuning - very low)
 
 # Optimizer
+# Adam (Adaptive Moment Estimation) update rule:
+#   m_t = β₁ × m_{t-1} + (1 - β₁) × g_t              (first moment - mean)
+#   v_t = β₂ × v_{t-1} + (1 - β₂) × g_t²             (second moment - variance)
+#   m̂_t = m_t / (1 - β₁^t)                           (bias correction)
+#   v̂_t = v_t / (1 - β₂^t)                           (bias correction)
+#   θ_t = θ_{t-1} - α × m̂_t / (√v̂_t + ε)            (parameter update)
+# where:
+#   g_t = gradient at time t
+#   α = learning rate (LEARNING_RATE_*)
+#   ε = epsilon for numerical stability
 OPTIMIZER = 'adam'                     # Adam optimizer
-BETA_1 = 0.9                          # Adam beta_1
-BETA_2 = 0.999                        # Adam beta_2
-EPSILON = 1e-7                        # Adam epsilon
+BETA_1 = 0.9                          # Adam beta_1 (exponential decay for first moment)
+BETA_2 = 0.999                        # Adam beta_2 (exponential decay for second moment)
+EPSILON = 1e-7                        # Adam epsilon (prevents division by zero)
 
 # Loss function
 LOSS_FUNCTION = 'categorical_crossentropy'
@@ -139,14 +159,21 @@ USE_AUGMENTATION = True
 
 # Augmentation parameters
 # These values are empirically chosen to be realistic for waste images
+# Mathematical formulas for transformations:
+#   - Rotation: angle = rotation_factor × 360° × random(-1, 1) = 0.2 × 360° = ±72°
+#   - Zoom: scale = 1 + zoom_factor × random(-1, 1) = range [0.8, 1.2]
+#   - Contrast: pixel_new = clip((pixel - mean) × (1 + contrast_factor × random(-1, 1)) + mean, 0, 255)
+#   - Brightness: pixel_new = clip(pixel + brightness_factor × 255 × random(-1, 1), 0, 255)
+#   - Translation: shift_x = width × width_shift_factor × random(-1, 1)
+#                 shift_y = height × height_shift_factor × random(-1, 1)
 AUGMENTATION_CONFIG = {
-    'horizontal_flip': True,           # Mirror flip
-    'rotation_factor': 0.2,            # ±20% rotation (±72 degrees)
-    'zoom_factor': 0.2,                # ±20% zoom
-    'contrast_factor': 0.2,            # ±20% contrast
-    'brightness_factor': 0.1,          # ±10% brightness (enabled for robustness)
-    'width_shift_factor': 0.1,         # ±10% horizontal shift (enabled)
-    'height_shift_factor': 0.1,        # ±10% vertical shift (enabled)
+    'horizontal_flip': True,           # Mirror flip (50% probability)
+    'rotation_factor': 0.2,            # ±20% rotation = ±72 degrees
+    'zoom_factor': 0.2,                # ±20% zoom = range [0.8, 1.2]
+    'contrast_factor': 0.2,            # ±20% contrast adjustment
+    'brightness_factor': 0.1,          # ±10% brightness = ±25.5 on [0,255] scale
+    'width_shift_factor': 0.1,         # ±10% horizontal shift = ±22.4 pixels @ 224px
+    'height_shift_factor': 0.1,        # ±10% vertical shift = ±22.4 pixels @ 224px
 }
 
 # =============================================================================
@@ -161,12 +188,11 @@ EARLY_STOPPING_MODE = 'min'
 EARLY_STOPPING_RESTORE_BEST = True
 
 # Reduce learning rate on plateau
-# Reduce LR if val_loss doesn't improve for N epochs
 REDUCE_LR_PATIENCE = 3
-REDUCE_LR_FACTOR = 0.5                 # Multiply LR by this factor
+REDUCE_LR_FACTOR = 0.5                 # Multiply LR by this factor (halve the learning rate)
 REDUCE_LR_MONITOR = 'val_loss'
 REDUCE_LR_MODE = 'min'
-REDUCE_LR_MIN_LR = 1e-7                # Minimum learning rate
+REDUCE_LR_MIN_LR = 1e-7                # Minimum learning rate (floor value)
 
 # Model checkpoint
 # Save best model based on val_loss
@@ -192,7 +218,11 @@ TF_DETERMINISTIC_OPS = True
 
 # YOLOv8 model
 YOLO_MODEL = 'yolov8n.pt'              # Nano model (fastest)
-YOLO_CONFIDENCE = 0.5                  # Detection confidence threshold
+YOLO_CONFIDENCE = 0.5                  # Detection confidence threshold (P(object) > 0.5)
+# NMS (Non-Maximum Suppression) IoU threshold
+# IoU (Intersection over Union) formula:
+#   IoU = Area(Box₁ ∩ Box₂) / Area(Box₁ ∪ Box₂)
+# If IoU > 0.45 between two boxes, suppress the box with lower confidence
 YOLO_IOU_THRESHOLD = 0.45              # NMS IoU threshold
 
 # Camera settings
@@ -213,7 +243,16 @@ BOX_THICKNESS = 2                      # Bounding box thickness
 # =============================================================================
 
 # Model optimization
+# INT8 Quantization formulas:
+#   Quantization: q = clip(round(r / scale) + zero_point, -128, 127)
+#   Dequantization: r = (q - zero_point) × scale
+#   Scale: scale = (r_max - r_min) / (q_max - q_min)
+#                = (r_max - r_min) / 255  (for INT8: [-128, 127])
+#   Zero point: zero_point = round(-r_min / scale)
 QUANTIZATION_TYPE = 'int8'             # int8, float16, or None
+# Pruning sparsity: fraction of weights to set to zero
+# Formula: sparsity = (number_of_zeros / total_weights)
+# 0.5 means 50% of weights will be pruned (set to 0)
 PRUNING_SPARSITY = 0.5                 # Target sparsity for pruning
 
 # API settings

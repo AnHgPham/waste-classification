@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -121,3 +122,128 @@ archive/removed_markdown_files/
 # Keep diagrams (generated but should be in repo)
 !docs/diagrams/*.png
 
+=======
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code settings (not needed in repo)
+.claude/
+
+# Project specific
+# Data directories (too large for git)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Model outputs
+# Allow .keras and .tflite files to be committed
+# If files are too large (>100MB), use Git LFS:
+#   git lfs install
+#   git lfs track "*.keras"
+#   git lfs track "*.tflite"
+outputs/models/*.h5
+outputs/models/*.pb
+!outputs/models/.gitkeep
+!outputs/models/*.keras
+!outputs/models/*.tflite
+
+# Reports and visualizations
+# Allow important reports but ignore training history plots
+outputs/reports/*_history.png
+outputs/reports/*_history.pkl
+outputs/reports/sample_images.png
+# Keep important reports (markdown, confusion matrices, classification reports)
+!outputs/reports/*.md
+!outputs/reports/*confusion_matrix.png
+!outputs/reports/*classification_report.txt
+!outputs/reports/class_distribution.png
+!outputs/reports/.gitkeep
+
+# Screenshots (generated)
+outputs/screenshots/*
+!outputs/screenshots/.gitkeep
+
+# Logs
+outputs/logs/*
+!outputs/logs/.gitkeep
+*.log
+
+# TensorFlow
+*.ckpt
+*.ckpt.*
+checkpoint
+
+# PyTorch
+*.pth
+*.pt
+
+# YOLO
+yolov8*.pt
+runs/
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Archive backups (cleaned up files)
+archive/removed_markdown_files/
+
+# Keep diagrams (generated but should be in repo)
+!docs/diagrams/*.png
+
+>>>>>>> 0f4e6bacbdcc7cbe72f1735a79da4b4b1da3fcfc

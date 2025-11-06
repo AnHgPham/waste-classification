@@ -81,11 +81,41 @@ def quantize_model(model, output_path, data_source=None):
     """
     Converts and quantizes a Keras model to TensorFlow Lite with INT8 quantization.
 
+    INT8 QUANTIZATION MATHEMATICS:
+
+    Quantization maps floating-point values to 8-bit integers:
+
+    1. Find range of float values during calibration:
+       r_min, r_max = min(weights), max(weights)
+
+    2. Calculate quantization parameters:
+       scale = (r_max - r_min) / (q_max - q_min)
+             = (r_max - r_min) / 255  (for INT8: q_min=-128, q_max=127)
+       zero_point = round(-r_min / scale)
+
+    3. Quantization (float → int8):
+       q = clip(round(r / scale) + zero_point, -128, 127)
+
+    4. Dequantization (int8 → float) during inference:
+       r = (q - zero_point) × scale
+
+    Example:
+       If r_min=-1.0, r_max=1.0:
+         scale = (1.0 - (-1.0)) / 255 = 2.0 / 255 ≈ 0.00784
+         zero_point = round(-(-1.0) / 0.00784) ≈ 128
+       For r=0.5: q = round(0.5 / 0.00784) + 128 ≈ 192
+       For r=-0.5: q = round(-0.5 / 0.00784) + 128 ≈ 64
+
+    Benefits:
+       - Model size reduction: ~75% (32-bit float → 8-bit int)
+       - Faster inference on edge devices (INT8 operations)
+       - Minimal accuracy loss (typically <1-2%)
+
     Arguments:
     model -- tf.keras.Model or str/Path. If string/Path, loads the model from that path.
              If Model object, uses it directly.
     output_path -- str or Path, path to save the quantized TFLite model.
-    data_source -- Path, tf.data.Dataset, or None. 
+    data_source -- Path, tf.data.Dataset, or None.
                    If Path: directory with training data for calibration.
                    If Dataset: uses it directly for calibration.
                    If None: uses TRAIN_DIR from config.
@@ -103,13 +133,22 @@ def quantize_model(model, output_path, data_source=None):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     
     # Set optimization flag
+    # tf.lite.Optimize.DEFAULT enables weight quantization
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    
+
     # Provide representative dataset for full integer quantization
+    # The representative dataset is used to calibrate quantization parameters:
+    #   - Run inference on ~100 sample images
+    #   - Record min/max activation values at each layer
+    #   - Calculate scale and zero_point for each layer
+    # This ensures quantization preserves model accuracy
     converter.representative_dataset = lambda: representative_dataset_generator(data_source)
-    
-    # Ensure input/output are also quantized
+
+    # Ensure input/output are also quantized (full INT8 quantization)
+    # TFLITE_BUILTINS_INT8: all operations use INT8 (no fallback to float)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    # Input type: uint8 (0-255) instead of float32
+    # Output type: uint8 (needs dequantization to get probabilities)
     converter.inference_input_type = tf.uint8
     converter.inference_output_type = tf.uint8
 
@@ -182,12 +221,22 @@ def evaluate_tflite_model(tflite_model_path, test_dir, img_size, num_classes):
 
         # Get output
         output = interpreter.get_tensor(output_details[0]['index'])
-        
+
         # Dequantize if needed
         if is_quantized:
+            # Dequantization formula: r = (q - zero_point) × scale
+            # where:
+            #   q = quantized output (uint8 or int8)
+            #   r = real (float) value
+            #   scale, zero_point = quantization parameters from calibration
+            # Example: if q=192, scale=0.00392, zero_point=0:
+            #          r = (192 - 0) × 0.00392 ≈ 0.753
             scale, zero_point = output_details[0]['quantization']
             output = scale * (output.astype(np.float32) - zero_point)
-        
+
+        # ArgMax: finds index of maximum value
+        # prediction = argmax(output) = argmax([p0, p1, ..., p9])
+        # Example: output=[0.1, 0.7, 0.2] → prediction=1
         prediction = np.argmax(output)
         true_label = np.argmax(labels[0].numpy())
 
@@ -195,7 +244,12 @@ def evaluate_tflite_model(tflite_model_path, test_dir, img_size, num_classes):
             correct += 1
         total += 1
 
+    # Accuracy calculation:
+    # accuracy = (number of correct predictions) / (total predictions)
+    #          = TP / (TP + TN + FP + FN)
+    # Example: if correct=950, total=1000:
+    #          accuracy = 950 / 1000 = 0.95 = 95%
     accuracy = correct / total
-    
+
     return accuracy
 

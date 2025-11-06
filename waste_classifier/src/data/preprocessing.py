@@ -54,9 +54,21 @@ def split_data(raw_dir, processed_dir, train_ratio, val_ratio, test_ratio, seed)
         random.shuffle(images)
 
         num_images = len(images)
+        # Data split calculation:
+        # num_train = floor(N × train_ratio) = floor(N × 0.8)
+        # num_val = floor(N × val_ratio) = floor(N × 0.1)
+        # num_test = N - num_train - num_val (ensures all images used)
+        # Example: if N=100 images:
+        #   num_train = floor(100 × 0.8) = 80
+        #   num_val = floor(100 × 0.1) = 10
+        #   num_test = 100 - 80 - 10 = 10
         num_train = int(num_images * train_ratio)
         num_val = int(num_images * val_ratio)
 
+        # Array slicing: images[start:end]
+        # train_images: indices [0, num_train)
+        # val_images: indices [num_train, num_train + num_val)
+        # test_images: indices [num_train + num_val, end)
         train_images = images[:num_train]
         val_images = images[num_train : num_train + num_val]
         test_images = images[num_train + num_val:]
@@ -98,6 +110,26 @@ def create_data_generators(train_dir, val_dir, img_size, batch_size, seed):
     """
     # Data augmentation pipeline - operates on [0, 255] range
     # More aggressive augmentation for better generalization
+    #
+    # AUGMENTATION FORMULAS:
+    #
+    # 1. RandomFlip("horizontal"):
+    #    new_pixel[i,j] = original_pixel[i, W-1-j] with 50% probability
+    #
+    # 2. RandomRotation(rotation_factor=0.2):
+    #    angle = 0.2 × 2π × random(-1, 1) = ±0.4π radians = ±72°
+    #    Applies rotation matrix: R(θ) = [[cos(θ), -sin(θ)], [sin(θ), cos(θ)]]
+    #
+    # 3. RandomZoom(zoom_factor=0.2):
+    #    scale = 1 + 0.2 × random(-1, 1) ∈ [0.8, 1.2]
+    #    new_coords = original_coords × scale
+    #    zoom_in: scale > 1 (crops center), zoom_out: scale < 1 (adds padding)
+    #
+    # 4. RandomContrast(contrast_factor=0.2):
+    #    factor = 1 + 0.2 × random(-1, 1) ∈ [0.8, 1.2]
+    #    mean_pixel = mean(image)
+    #    new_pixel = clip((pixel - mean_pixel) × factor + mean_pixel, 0, 255)
+    #    Higher factor increases contrast, lower factor decreases contrast
     augmentation_layers = [
         layers.RandomFlip("horizontal"),
         layers.RandomRotation(AUGMENTATION_CONFIG['rotation_factor']),
@@ -107,11 +139,21 @@ def create_data_generators(train_dir, val_dir, img_size, batch_size, seed):
     
     # Add optional augmentations if enabled in config
     if AUGMENTATION_CONFIG.get('brightness_factor', 0) > 0:
+        # RandomBrightness(brightness_factor=0.1):
+        #   delta = 0.1 × 255 × random(-1, 1) ∈ [-25.5, 25.5]
+        #   new_pixel = clip(pixel + delta, 0, 255)
+        #   Positive delta brightens, negative delta darkens
         augmentation_layers.append(
             layers.RandomBrightness(AUGMENTATION_CONFIG['brightness_factor'])
         )
-    
+
     if AUGMENTATION_CONFIG.get('width_shift_factor', 0) > 0 or AUGMENTATION_CONFIG.get('height_shift_factor', 0) > 0:
+        # RandomTranslation(height_factor=0.1, width_factor=0.1):
+        #   For image of size (224, 224):
+        #   shift_x = 224 × 0.1 × random(-1, 1) ∈ [-22.4, 22.4] pixels
+        #   shift_y = 224 × 0.1 × random(-1, 1) ∈ [-22.4, 22.4] pixels
+        #   new_pixel[i,j] = original_pixel[i+shift_y, j+shift_x]
+        #   Simulates camera movement or object position variation
         augmentation_layers.append(
             layers.RandomTranslation(
                 height_factor=AUGMENTATION_CONFIG.get('height_shift_factor', 0),

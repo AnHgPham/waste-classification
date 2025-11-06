@@ -42,6 +42,11 @@ def build_transfer_model(input_shape, num_classes, freeze_base=True):
     
     # Preprocessing layer for MobileNetV2
     # Input should be in range [0, 255], will be normalized to [-1, 1]
+    # Formula: normalized = (pixel / 127.5) - 1
+    # Example: pixel=255 → (255/127.5)-1 = 1.0
+    #          pixel=0   → (0/127.5)-1   = -1.0
+    #          pixel=127 → (127/127.5)-1 ≈ -0.004
+    # Range transformation: [0, 255] → [-1, 1]
     x = keras.applications.mobilenet_v2.preprocess_input(inputs)
     
     # Base model - use training mode appropriately for BatchNorm
@@ -51,19 +56,32 @@ def build_transfer_model(input_shape, num_classes, freeze_base=True):
     
     # 4. Add the classification head
     # Using a deeper classification head for better feature learning
+    # Global Average Pooling:
+    #   GAP(x)[channel] = mean(x[:,:,channel])
+    # Reduces MobileNetV2 output (7, 7, 1280) → (1280,)
     x = layers.GlobalAveragePooling2D(name="GlobalAvgPool")(x)
-    
+
     # First dense layer
+    # Formula: Output = ReLU(W @ Input + b)
+    # Shape: (1280,) → (256,) where TRANSFER_DENSE_UNITS=256
     x = layers.Dense(TRANSFER_DENSE_UNITS, activation='relu', name="Dense_1")(x)
+    # Batch Normalization: BN(x) = γ × ((x - μ) / √(σ² + ε)) + β
     x = layers.BatchNormalization(name="BatchNorm_1")(x)
+    # Dropout: randomly set TRANSFER_DROPOUT_RATE (30%) of activations to zero
+    # Formula: output = input × mask / (1 - 0.3) during training
     x = layers.Dropout(TRANSFER_DROPOUT_RATE, name="Dropout_1")(x)
-    
+
     # Second dense layer for more capacity
+    # Integer division: TRANSFER_DENSE_UNITS // 2 = 256 // 2 = 128
+    # Shape: (256,) → (128,)
     x = layers.Dense(TRANSFER_DENSE_UNITS // 2, activation='relu', name="Dense_2")(x)
     x = layers.BatchNormalization(name="BatchNorm_2")(x)
     x = layers.Dropout(TRANSFER_DROPOUT_RATE, name="Dropout_2")(x)
-    
-    # Output layer
+
+    # Output layer with Softmax:
+    #   Softmax(z_i) = exp(z_i) / Σ(exp(z_j)) for all j in num_classes
+    # Converts (128,) logits → (num_classes,) probabilities
+    # Property: Σ(outputs) = 1.0, all values in [0, 1]
     outputs = layers.Dense(num_classes, activation='softmax', name="Classifier")(x)
     
     # 5. Build the final model
@@ -75,6 +93,15 @@ def build_transfer_model(input_shape, num_classes, freeze_base=True):
 def unfreeze_layers(model, num_layers_to_unfreeze):
     """
     Unfreezes the top N layers of the base model for fine-tuning.
+
+    Fine-tuning mathematics:
+    - Frozen layers: gradients are not computed, weights unchanged
+    - Unfrozen layers: gradients flow, weights updated via:
+      θ_new = θ_old - α × ∇L(θ)
+    - Use low learning rate (α) to preserve pretrained features
+
+    Strategy: Unfreeze top layers (closest to output) first as they contain
+    task-specific features, while bottom layers contain general features
 
     Arguments:
     model -- tf.keras.Model, the model to modify.
@@ -92,9 +119,11 @@ def unfreeze_layers(model, num_layers_to_unfreeze):
         layer.trainable = False
 
     # Unfreeze the top N layers
+    # Python slicing: layers[-N:] gets last N elements
+    # Example: if N=20, unfreezes layers at indices [-20, -19, ..., -2, -1]
     for layer in base_model.layers[-num_layers_to_unfreeze:]:
         layer.trainable = True
-        
+
     print(f"Unfroze {num_layers_to_unfreeze} layers from the base model.")
     return model
 
