@@ -35,12 +35,6 @@ LOGS_DIR = OUTPUTS_DIR / "logs"
 REPORTS_DIR = OUTPUTS_DIR / "reports"
 SCREENSHOTS_DIR = OUTPUTS_DIR / "screenshots"
 
-# Week-specific directories
-WEEK1_DIR = PROJECT_ROOT / "Week1_Data_and_Baseline"
-WEEK2_DIR = PROJECT_ROOT / "Week2_Transfer_Learning"
-WEEK3_DIR = PROJECT_ROOT / "Week3_Realtime_Detection"
-WEEK4_DIR = PROJECT_ROOT / "Week4_Deployment"
-
 # =============================================================================
 # DATASET CONFIGURATION
 # =============================================================================

@@ -25,7 +25,7 @@ def main():
     if not RAW_DATA_DIR.exists():
         print(f"\n❌ ERROR: Raw data directory not found: {RAW_DATA_DIR}")
         print("\n📥 Please download the dataset first.")
-        print("   Run: python scripts/week1_data_exploration.py")
+        print("   Run: python scripts/01_data_exploration.py")
         return
     
     # Split the data

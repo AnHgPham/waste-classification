@@ -10,7 +10,7 @@ This module provides functions for:
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 
 from ..config import *
 
@@ -28,7 +28,9 @@ def build_transfer_model(input_shape, num_classes, freeze_base=True):
     model -- tf.keras.Model, the compiled transfer learning model.
     """
     # 1. Load the pretrained base model
-    base_model = keras.applications.MobileNetV2(
+    # Get model class from keras.applications dynamically
+    model_class = getattr(keras.applications, TRANSFER_BASE_MODEL)
+    base_model = model_class(
         input_shape=input_shape,
         include_top=False,  # Do not include the original classifier
         weights=TRANSFER_WEIGHTS

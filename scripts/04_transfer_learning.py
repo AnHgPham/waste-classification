@@ -30,7 +30,7 @@ def main(args):
     if not TRAIN_DIR.exists() or not VAL_DIR.exists():
         print(f"\n❌ ERROR: Processed data not found!")
         print("   Please run preprocessing first:")
-        print("   python scripts/week1_preprocessing.py")
+        print("   python scripts/02_preprocessing.py")
         return
     
     # Load datasets

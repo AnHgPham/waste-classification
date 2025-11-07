@@ -55,9 +55,9 @@ def run_realtime_detection(args):
         print(f"\n[ERROR] Classifier model not found: {model_path}")
         print(f"\n   Please train the {model_name} model first:")
         if model_name == 'baseline':
-            print("   python scripts/week1_baseline_training.py")
+            print("   python scripts/03_baseline_training.py")
         else:
-            print("   python scripts/week2_transfer_learning.py")
+            print("   python scripts/04_transfer_learning.py")
         return
     
     print(f"\n[LOADING] Loading classifier model: {model_name}")
@@ -68,23 +68,17 @@ def run_realtime_detection(args):
     print(f"\n[LOADING] Loading YOLOv8 detection model...")
     yolo_model = load_yolo_model(YOLO_MODEL)
     
-    # Setup video source
-    if args.video:
-        print(f"\n[VIDEO] Opening video file: {args.video}")
-        cap = cv2.VideoCapture(args.video)
-        source_name = "Video File"
-    else:
-        print(f"\n[CAMERA] Opening camera {args.camera}...")
-        cap = cv2.VideoCapture(args.camera)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
-        source_name = f"Camera {args.camera}"
+    # Setup camera
+    print(f"\n[CAMERA] Opening camera {args.camera}...")
+    cap = cv2.VideoCapture(args.camera)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
 
     if not cap.isOpened():
-        print(f"[ERROR] Could not open video source")
+        print(f"[ERROR] Could not open camera")
         return
 
-    print(f"   [OK] {source_name} opened successfully")
+    print(f"   [OK] Camera {args.camera} opened successfully")
     
     # Create screenshots directory
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -108,7 +102,7 @@ def run_realtime_detection(args):
             if not paused:
                 ret, frame = cap.read()
                 if not ret:
-                    print("\n[WARNING] End of video stream")
+                    print("\n[WARNING] Camera disconnected")
                     break
                 
                 frame_count += 1
@@ -171,8 +165,6 @@ def main():
                         help='Classifier model to use (default: mobilenetv2)')
     parser.add_argument('--camera', type=int, default=CAMERA_INDEX,
                         help=f'Camera index (default: {CAMERA_INDEX})')
-    parser.add_argument('--video', type=str, default=None,
-                        help='Path to video file (if not using camera)')
     args = parser.parse_args()
     
     run_realtime_detection(args)

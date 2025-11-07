@@ -7,7 +7,7 @@ This module provides functions to build the baseline CNN architecture.
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from keras import layers
 
 from ..config import *
 
